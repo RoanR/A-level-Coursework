@@ -83,7 +83,9 @@
         Next
         Return Pixels
     End Function
-    Sub InduvidualChar(ByVal Group(,) As Integer, ByVal currentchar As Integer)
+    Sub IndividualChar(ByVal Group(,) As Integer, ByVal currentchar As Integer)
+Dim pic As Bitmap = New Bitmap(pb_Input.Image)
+        Dim col As Color
         Dim counter As Integer = 0
         Dim Max_X As Integer = 0
         Dim Max_Y As Integer = 0
@@ -103,21 +105,41 @@
             End If
             counter += 1
         Loop
+Dim CharMatrix(19,29) as Integer
         ScaleFactor(0, 0) = (Max_X - Min_X) \ 20
         ScaleFactor(1, 0) = (Max_Y - Min_Y) \ 30
-        Dim localavg As Integer = 0
-        For YA As Integer = 0 To (Max_Y - Min_Y) Step ScaleFactor(1, 0)
-            For XA As Integer = 0 To (Max_X - Min_X) Step ScaleFactor(0, 0)
+ScaleFactor(0, 1) = (Max_X - Min_X) mod 20
+ScaleFactor(1, 1) = (Max_Y - Min_Y) mod 30
+Dim Significant As boolean = false
+For YA As Integer = 0 To (Max_Y - Min_Y -ScaleFactor(1, 1)-1) Step ScaleFactor(1, 0)
+            For XA As Integer = 0 To (Max_X - Min_X-ScaleFactor(0, 1)-1) Step ScaleFactor(0, 0)
+significant = false
                 For y As Integer = 0 To ScaleFactor(1, 0)
                     For x As Integer = 0 To ScaleFactor(0, 1)
-                        localavg += Group(XA + x, YA + y)
+col = pic.getpixel(XA+x+Min_X,YA+y+Min_Y)
+if col.B = 0 then 
+significant = true
+end if
                     Next
                 Next
-                If localavg / (ScaleFactor(1, 0) * ScaleFactor(0, 0)) Then
-
+If Significant = true Then
+CharMatrix(XA,YA)=1
+else
+CharMatrix = 0
                 End If
             Next
         Next
+pb_Input.Image = Image.FromFile("20x30.BMP")
+pic = pb_Input.Image
+for x as integer = 0 to 19
+for y as integer = 0 to 29
+if CharMatrix(x,y)= 1 then
+pic.setpixel(x,y,black)
+end if
+Next
+Next
+pb_Input.Image = pic
+
         'NEED TO DISPLAY IMAGE IN PICTURE BOX AFTER DETECTING BOUNDARIES TO THEN BE ABLE TO PERFORM AI
     End Sub
     Function YesNoBox(ByVal Message As String)
