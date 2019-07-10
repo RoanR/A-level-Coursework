@@ -1,12 +1,10 @@
-﻿Public Class Form1
+Public Class Form1
     Private Sub Btn_SearchForImage_Click(sender As Object, e As EventArgs) Handles btn_SearchForImage.Click
         'allows user to selet a file and checks its a vaild filepath
         If OFD_ImageInsert.ShowDialog <> Windows.Forms.DialogResult.Cancel Then
             'sets Picture box to image user selected
             pb_Input.Image = Image.FromFile(OFD_ImageInsert.FileName)
         End If
-        MsgBox("Continue to Black and White ?")
-        'calls Black and White function
         ToBlackWhite()
         DetectPixelGroups()
 
@@ -65,7 +63,7 @@
                 End If
             Next y
         Next x
-        InduvidualChar(Group, currentchar:=0)
+        IndividualChar(Group, currentchar:=0)
     End Sub
     Function SurroundingPixels(ByRef Xpixel As Integer, ByRef Ypixel As Integer, ByRef BinaryImageMatrix(,) As Integer) As Integer(,)
         Dim counter As Integer = 0
@@ -84,61 +82,67 @@
         Return Pixels
     End Function
     Sub IndividualChar(ByVal Group(,) As Integer, ByVal currentchar As Integer)
-Dim pic As Bitmap = New Bitmap(pb_Input.Image)
+        Dim pic As Bitmap = New Bitmap(pb_Input.Image)
         Dim col As Color
         Dim counter As Integer = 0
         Dim Max_X As Integer = 0
         Dim Max_Y As Integer = 0
         Dim Min_X As Integer = 10000
         Dim Min_Y As Integer = 10000
-        Dim ScaleFactor(1, 0) As Integer
-        Do Until (Group(currentchar, counter) = 0 And Group(currentchar + 1, counter) = 0) Or counter - 1 = Group.GetLength(currentchar)
-            If Group(currentchar, counter) > Max_X Then
-                Max_X = Group(currentchar, counter)
-            ElseIf Group(currentchar, counter) < Min_X Then
-                Min_X = Group(currentchar, counter)
+        Dim ScaleFactor(1, 1) As Integer
+        Do Until counter = Group.GetLength(1) - 2
+            If Group(currentchar, counter) > 0 Then
+                If Group(currentchar, counter) > Max_X Then
+                    Max_X = Group(currentchar, counter)
+                End If
+                If Group(currentchar, counter) < Min_X Then
+                    Min_X = Group(currentchar, counter)
+                End If
             End If
-            If Group(currentchar + 1, counter) > Max_Y Then
-                Max_Y = Group(currentchar, counter)
-            ElseIf Group(currentchar + 1, counter) < Min_Y Then
-                Min_Y = Group(currentchar, counter)
+            If Group(currentchar + 1, counter) > 0 Then
+                If Group(currentchar + 1, counter) > Max_Y Then
+                    Max_Y = Group(currentchar + 1, counter)
+                End If
+                If Group(currentchar + 1, counter) < Min_Y Then
+                    Min_Y = Group(currentchar + 1, counter)
+                End If
             End If
             counter += 1
         Loop
-Dim CharMatrix(19,29) as Integer
+        Dim CharMatrix(19, 29) As Integer
         ScaleFactor(0, 0) = (Max_X - Min_X) \ 20
         ScaleFactor(1, 0) = (Max_Y - Min_Y) \ 30
-ScaleFactor(0, 1) = (Max_X - Min_X) mod 20
-ScaleFactor(1, 1) = (Max_Y - Min_Y) mod 30
-Dim Significant As boolean = false
-For YA As Integer = 0 To (Max_Y - Min_Y -ScaleFactor(1, 1)-1) Step ScaleFactor(1, 0)
-            For XA As Integer = 0 To (Max_X - Min_X-ScaleFactor(0, 1)-1) Step ScaleFactor(0, 0)
-significant = false
+        ScaleFactor(0, 1) = (Max_X - Min_X) Mod 20
+        ScaleFactor(1, 1) = (Max_Y - Min_Y) Mod 30
+        Dim Significant As Boolean = False
+        For YA As Integer = 0 To (Max_Y - Min_Y - ScaleFactor(1, 1) - 1) Step ScaleFactor(1, 0)
+            For XA As Integer = 0 To (Max_X - Min_X - ScaleFactor(0, 1) - 1) Step ScaleFactor(0, 0)
+                Significant = False
                 For y As Integer = 0 To ScaleFactor(1, 0)
                     For x As Integer = 0 To ScaleFactor(0, 1)
-col = pic.getpixel(XA+x+Min_X,YA+y+Min_Y)
-if col.B = 0 then 
-significant = true
-end if
+                        col = pic.getpixel(XA + x + Min_X, YA + y + Min_Y)
+                        If col.B = 0 Then
+                            Significant = True
+                        End If
                     Next
                 Next
-If Significant = true Then
-CharMatrix(XA,YA)=1
-else
-CharMatrix = 0
+                If Significant = True Then
+                    CharMatrix(XA / ScaleFactor(0, 0), YA / ScaleFactor(1, 0)) = 1
+                Else
+                    CharMatrix(XA / ScaleFactor(0, 0), YA / ScaleFactor(1, 0)) = 0
                 End If
             Next
         Next
-pb_Input.Image = Image.FromFile("20x30.BMP")
-pic = pb_Input.Image
-for x as integer = 0 to 19
-for y as integer = 0 to 29
-if CharMatrix(x,y)= 1 then
-pic.setpixel(x,y,black)
-end if
-Next
-Next
-pb_Input.Image = pic
+        pb_Input.Image = Image.FromFile("20x30.BMP")
+        pic = pb_Input.Image
+        For x As Integer = 0 To 19
+            For y As Integer = 0 To 29
+                If CharMatrix(x, y) = 1 Then
+                    pic.SetPixel(x, y, Color.Black)
+                End If
+            Next
+        Next
+        pb_Input.Image = pic
 
         'NEED TO DISPLAY IMAGE IN PICTURE BOX AFTER DETECTING BOUNDARIES TO THEN BE ABLE TO PERFORM AI
     End Sub
@@ -148,20 +152,33 @@ pb_Input.Image = pic
             Return True
         End If
     End Function
-    Function ToBlackWhite()
+    Sub ToBlackWhite()
         'Turns Bitmap images as input into Black and white
         Dim pic As Bitmap = New Bitmap(pb_Input.Image) 'uses image that user uploaded to picture box 
-        Dim gem, r, g, b As Integer
+        Dim gem, total As Integer
         Dim col As Color
         'loops through each pixel 
         For x As Integer = 0 To pic.Width - 1
             For y As Integer = 0 To pic.Height - 1
                 col = pic.GetPixel(x, y) 'retrieves current pixel colour values 
-                r = col.R 'retrieves colour values for RBG of current pixel
-                g = col.G
-                b = col.B
-                gem = (r + g + b) / 3 'averages RGB colour values
-                If gem > 128 Then 'if more than half then ixel is set to white,ViceVersa
+                total += col.R 'retrieves colour values for RBG of current pixel
+                total += col.G
+                total += col.B
+            Next y
+        Next x
+        total = total \ 3
+        total = total \ (pic.Width * pic.Height)
+        For x As Integer = 0 To pic.Width - 1
+            For y As Integer = 0 To pic.Height - 1
+                col = pic.GetPixel(x, y)
+                'retrieves current pixel colour values 
+                gem = 0
+                gem += (col.B)
+                gem += (col.R)
+                gem += (col.G)
+                gem = gem / 3
+                'averages RGB colour values
+                If gem > total Then 'if more than half then ixel is set to white,ViceVersa
                     pic.SetPixel(x, y, Color.White)
                 Else
                     pic.SetPixel(x, y, Color.Black)
@@ -169,5 +186,5 @@ pb_Input.Image = pic
             Next y
         Next x
         pb_Input.Image = pic 'updates Picture Box to display new Image(BW)
-    End Function
+    End Sub
 End Class
